@@ -1,0 +1,44 @@
+name: WorkBuddy 每日积分（签到 + 派猫猫）
+
+on:
+  schedule:
+    # 北京时间 09:17 每天跑一次（UTC 01:17）。单一时点即可维持循环：
+    # 今天派出 -> 1~4h 回家 -> 明天此时已到家 -> 领 + 再派。
+    - cron: '17 1 * * *'
+  workflow_dispatch: {}   # 允许手动触发（验收 / 补跑）
+
+permissions:
+  contents: read
+
+jobs:
+  credits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WORKBUDDY_TOKEN:     ${{ secrets.WORKBUDDY_TOKEN }}
+      WORKBUDDY_UID:       ${{ secrets.WORKBUDDY_UID }}
+      WORKBUDDY_DOMAIN:    ${{ secrets.WORKBUDDY_DOMAIN }}
+      WORKBUDDY_ENTID:     ${{ secrets.WORKBUDDY_ENTID }}
+      FEISHU_WEBHOOK:      ${{ secrets.FEISHU_WEBHOOK }}
+      FEISHU_SECRET:       ${{ secrets.FEISHU_SECRET }}
+      WB_TRAVEL_LOCATION:  ${{ secrets.WB_TRAVEL_LOCATION }}   # 可选：1咖啡馆 2商场 3健身房 4古镇，默认1
+      RAW_DUMP: "1"        # 在 Actions 日志里打印脱敏后的原始返回，便于排查
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 定位解释器（动态取，不写死版本号）
+        id: bins
+        run: |
+          echo "python=$(command -v python3 || echo python3)" >> "$GITHUB_OUTPUT"
+          echo "node=$(command -v node || echo node)"         >> "$GITHUB_OUTPUT"
+
+      - name: 屏蔽敏感信息（token/uid 不在日志中出现明文）
+        run: |
+          echo "::add-mask::${{ secrets.WORKBUDDY_TOKEN }}"
+          echo "::add-mask::${{ secrets.WORKBUDDY_UID }}"
+
+      - name: 运行签到 + 派猫猫并推送飞书
+        run: |
+          PY="${{ steps.bins.outputs.python }}"
+          "$PY" scripts/run_credits.py

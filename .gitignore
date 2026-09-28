@@ -1,0 +1,10 @@
+# 敏感凭据：由 capture_at_rest_key.sh 生成，内含主密钥 policy，绝不入库
+at-rest.key
+*.key
+*.keyblob
+
+# 本地运行日志
+*.log
+
+# 依赖（脚本不依赖本地 node_modules）
+node_modules/
