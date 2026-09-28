@@ -222,7 +222,9 @@ def do_travel(headers, token, raw_collect):
     state = data.get("state") or data.get("status") or ""
     limit = bool(data.get("daily_limit_reached"))
     record_id = data.get("record_id") or (data.get("current_record") or {}).get("id")
-    loc = os.environ.get("WB_TRAVEL_LOCATION", "1")
+    loc = (os.environ.get("WB_TRAVEL_LOCATION") or "").strip() or "1"
+    if not loc.isdigit():
+        loc = "1"
     log(f"猫猫状态 state={state} daily_limit_reached={limit} record_id={record_id}")
 
     parts = []
